@@ -5,15 +5,18 @@ import {
   ScrollView,
   StatusBar,
   FlatList,
-  TextInput,
-  Button,
   KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { SearchBar, Input, Button } from "react-native-elements";
+import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ifIphoneX, getStatusBarHeight } from "react-native-iphone-x-helper";
+
 import { TTodo } from "./types";
 import TodoItem from "./components/TodoItem";
 
-const STATUSBAR_HEIGHT = StatusBar.currentHeight;
+const STATUSBAR_HEIGHT = getStatusBarHeight();
 const STORE_KEY = "@todoapp.todo" as const;
 
 export default function App() {
@@ -83,15 +86,17 @@ export default function App() {
     }
   }, [todos, filterText]);
 
+  const platform = Platform.OS == "ios" ? "ios" : "android";
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
-      <View style={styles.filter}>
-        <TextInput
-          onChangeText={(text) => setFilterText(text)}
-          value={filterText}
-          style={styles.inputText}
-        />
-      </View>
+      <SearchBar
+        platform={platform}
+        onChangeText={(text) => setFilterText(text)}
+        onClear={() => setFilterText("")}
+        value={filterText}
+        placeholder="Type filter text"
+      />
       <ScrollView style={styles.todoList}>
         <FlatList
           extraData={filteredTodos}
@@ -103,16 +108,15 @@ export default function App() {
         />
       </ScrollView>
       <View style={styles.input}>
-        <TextInput
+        <Input
           onChangeText={(text) => setInputText(text)}
           value={inputText}
-          style={styles.inputText}
+          containerStyle={styles.inputText}
         />
         <Button
           onPress={handleChange}
-          title="Add"
-          color="#841584"
-          style={styles.inputButton}
+          buttonStyle={styles.inputButton}
+          icon={<Icon name="plus" size={30} color="white" />}
         />
       </View>
       <StatusBar />
@@ -133,13 +137,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   input: {
-    height: 30,
+    ...ifIphoneX(
+      {
+        paddingBottom: 30,
+        height: 80,
+      },
+      {
+        height: 50,
+      }
+    ),
+    height: 70,
     flexDirection: "row",
+    paddingRight: 10,
   },
   inputText: {
     flex: 1,
+    paddingHorizontal: 10,
   },
   inputButton: {
-    width: 100,
+    width: 48,
+    height: 48,
+    borderWidth: 0,
+    borderColor: "transparent",
+    borderRadius: 48,
+    backgroundColor: "#ff6347",
   },
 });
