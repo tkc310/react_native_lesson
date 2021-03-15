@@ -9,12 +9,13 @@ const initialState = {
 export const todos = (state = initialState, action: TFSA) => {
   switch (action.type) {
     case TODO.ADD:
+      const current = state.current + 1;
       const newTodo = {
         title: action.payload,
-        order: state.current,
+        order: current,
         done: false,
       };
-      return { ...state, todos: [...state.todos, newTodo] };
+      return { ...state, current, todos: [...state.todos, newTodo] };
     case TODO.TOGGLE:
       const todos = state.todos.map((item: TTodo) => {
         if (item.order === action.payload) {
