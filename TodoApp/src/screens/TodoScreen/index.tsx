@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import { connect } from "react-redux";
+import { addTodo, toggleTodo } from "@/actionCreators";
 import {
   StyleSheet,
   View,
@@ -10,73 +12,32 @@ import {
 } from "react-native";
 import { SearchBar, Input, Button } from "react-native-elements";
 import Icon from "react-native-vector-icons/Feather";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ifIphoneX, getStatusBarHeight } from "react-native-iphone-x-helper";
-
-import { TTodo } from "./types";
-import TodoItem from "./components/TodoItem";
+import { TTodo, TaddTodo, TtoggleTodo } from "@/types";
+import TodoItem from "@/components/TodoItem";
 
 const STATUSBAR_HEIGHT = getStatusBarHeight();
-const STORE_KEY = "@todoapp.todo" as const;
 
-export default function App() {
-  const [todos, setTodos] = useState<TTodo[]>([]);
-  const [current, setCurrent] = useState<number>(0);
+type Props = {
+  todos: TTodo[];
+  addTodo: TaddTodo;
+  toggleTodo: TtoggleTodo;
+};
+
+export const TodoScreen = ({ todos, addTodo, toggleTodo }: Props) => {
   const [inputText, setInputText] = useState<string>("");
   const [filterText, setFilterText] = useState<string>("");
-
-  const loadTodo = useCallback(async () => {
-    try {
-      const todoString = await AsyncStorage.getItem(STORE_KEY);
-      if (todoString) {
-        const storedTodos = JSON.parse(todoString) || [];
-        setTodos(storedTodos);
-        setCurrent(storedTodos.length);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
-
-  const saveTodos = useCallback(async (_todos) => {
-    try {
-      const todoString = JSON.stringify(_todos);
-      await AsyncStorage.setItem(STORE_KEY, todoString);
-    } catch (error) {
-      console.error(error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadTodo();
-  }, []);
 
   const handleChange = useCallback(() => {
     if (inputText === "") return;
 
-    const order = current + 1;
-    const newTodo = { order, title: inputText, done: false };
-    const newTodos = [...todos, newTodo];
-    setTodos(newTodos);
-    setCurrent(order);
+    addTodo(inputText);
     setInputText("");
-    saveTodos(newTodos);
-  }, [inputText, current, todos]);
+  }, [inputText]);
 
-  const handleToggle = useCallback(
-    (order) => {
-      const _todos = todos.map((item) => {
-        if (item.order === order) {
-          return { ...item, done: !item.done };
-        } else {
-          return item;
-        }
-      });
-      setTodos(_todos);
-      saveTodos(_todos);
-    },
-    [todos]
-  );
+  const handleToggle = useCallback((order) => {
+    toggleTodo(order);
+  }, []);
 
   const filteredTodos = useMemo(() => {
     if ([""].includes(filterText)) {
@@ -122,7 +83,21 @@ export default function App() {
       <StatusBar />
     </KeyboardAvoidingView>
   );
-}
+};
+
+const mapStateToProps = (state) => {
+  const { todos } = state.todo;
+  return { todos };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    addTodo: (title: TTodo["title"]) => dispatch(addTodo(title)),
+    toggleTodo: (order: TTodo["order"]) => dispatch(toggleTodo(order)),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(TodoScreen);
 
 const styles = StyleSheet.create({
   container: {
