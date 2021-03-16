@@ -11,3 +11,7 @@ export type TFSA = {
   meta?: any,
   error?: true,
 };
+
+export type TaddTodo = (title: TTodo["title"]) => void;
+
+export type TtoggleTodo = (order: TTodo["order"]) => void;
