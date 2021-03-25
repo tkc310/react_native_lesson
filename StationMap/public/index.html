@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>経路探索アプリ webview</title>
+  <link rel="stylesheet" href="https://rmap.ekispert.jp/production/rosen.css" />
+  <script src="https://rmap.ekispert.jp/production/rosen.js"></script>  <style>
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+    #map { width: inherit; height: inherit; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    var rosen;
+    function init(apiKey) {
+      window.postMessageReactNative = window.ReactNativeWebView && window.ReactNativeWebView.postMessage;
+      var postMassage = window.postMessageReactNative || window.postMessage;
+
+      rosen = new Rosen("map", {
+        apiKey: apiKey,
+        consoleViewControl: true,
+      });
+
+      rosen.on('selectStation', function (data) {
+        if (data.stations.length) {
+          var station = data.stations[0];
+          var ret = {
+            "code": station.code,
+            "name": station.name,
+          };
+          rosen.setStationMarker(station.code);
+          postMassage(JSON.stringify(ret));
+        }
+      });
+    }
+
+    function clear_all() {
+      rosen.clearAll();
+    }
+
+    function highlight_section(
+      line_code,
+      station_code1,
+      station_code2
+    ) {
+      rosen.getSectionsByStations(
+        line_code,
+        station_code1,
+        station_code2,
+      )
+      .then(function(sections) {
+        var section_codes = sections.map(function(section) {
+          return section.code;
+        });
+        rosen.highlightSections(section_codes);
+      });
+    }
+
+    function set_station_markers(stations) {
+      stations.forEach(function(station_code) {
+        rosen.setStationMarker(station_code);
+      });
+    }
+
+    window.addEventListener("message", function(event) {
+      if (event && event.data) {
+        try {
+          var data = JSON.parse(event.data);
+          switch (data.type) {
+            case "init_map":
+              init(data.api_key);
+              break;
+            case "clear_all":
+              clear_all();
+              break;
+            case "highlight_section":
+              highlight_section(
+                data.line_code,
+                data.station_code1,
+                data.station_code2,
+              );
+              break;
+            case "set_station_markers":
+              set_station_markers(data.stations);
+              break;
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
+
+    // window.addEventListener('load', init.bind(this, "2jr5nchcswemrfjj67jvjaqu"));
+  </script>
+</body>
+</html>
